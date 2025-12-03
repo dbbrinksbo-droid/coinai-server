@@ -4,5 +4,8 @@ pillow
 numpy
 onnxruntime
 gunicorn
+uvicorn
+starlette
+
 
 
