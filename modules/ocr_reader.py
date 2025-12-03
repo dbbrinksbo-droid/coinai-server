@@ -1,13 +1,16 @@
-from modules.gpt_helper import ask_gpt
+import pytesseract
+from PIL import Image
+import io
 
-def read_text_from_image(image_base64: str) -> str:
+def extract_ocr(img_bytes):
     """
-    OCR using GPT-4o-mini Vision (supports images via base64)
+    Simple OCR extraction using pytesseract.
+    Returns detected text or empty string.
     """
-    prompt = """
-    Extract ALL text you can see in this coin image.
-    Keep formatting simple. Only return text.
-    """
-
-    response = ask_gpt(prompt, image_base64=image_base64)
-    return response
+    try:
+        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        text = pytesseract.image_to_string(img, lang="eng")
+        return text.strip()
+    except Exception as e:
+        print("❌ OCR ERROR:", e)
+        return ""
