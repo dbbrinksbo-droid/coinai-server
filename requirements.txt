@@ -1,5 +1,7 @@
-
-fastapi
-uvicorn
+flask
+flask-cors
 pillow
-python-multipart
+numpy
+onnxruntime
+uvicorn
+
