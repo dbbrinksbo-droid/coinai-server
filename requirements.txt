@@ -1,11 +1,10 @@
 flask
 flask-cors
-pillow
-numpy
 onnxruntime
-gunicorn
-uvicorn
-starlette
-
-
+numpy
+pillow
+openai
+torch
+transformers
+pytesseract
 
