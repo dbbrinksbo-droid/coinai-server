@@ -3,9 +3,5 @@ flask-cors
 pillow
 numpy
 onnxruntime
-gunicorn
-uvicorn
 pytesseract
-opencv-python-headless
-python-dotenv
 openai
