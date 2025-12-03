@@ -1,20 +1,13 @@
-import pytesseract
-from PIL import Image
-import numpy as np
+from modules.gpt_helper import ask_gpt
 
-def read_text_from_image(image_bytes):
+def read_text_from_image(image_base64: str) -> str:
     """
-    Læser tekst fra en mønt — fx årstal eller små detaljer.
-    Bruges senere i full_analyze.
+    OCR using GPT-4o-mini Vision (supports images via base64)
     """
-    try:
-        img = Image.open(image_bytes)
-        img = img.convert("L")  # grayscale
-        arr = np.array(img)
+    prompt = """
+    Extract ALL text you can see in this coin image.
+    Keep formatting simple. Only return text.
+    """
 
-        text = pytesseract.image_to_string(arr, config="--psm 7")
-        cleaned = text.strip()
-
-        return cleaned if cleaned else None
-    except Exception as e:
-        return None
+    response = ask_gpt(prompt, image_base64=image_base64)
+    return response
