@@ -13,18 +13,29 @@ def full_coin_analyze(image_bytes: bytes):
     4) Samlet metadata
     """
 
-    # 1) ONNX-model
-    prediction = predict_image(image_bytes)
+    # 1) ONNX prediction
+    prediction_raw = predict_image(image_bytes)
+
+    # ensure prediction_raw contains needed fields
+    prediction_label = prediction_raw.get("label", "")
+    prediction_confidence = prediction_raw.get("confidence", 0)
 
     # 2) OCR
-    ocr_text = extract_ocr(image_bytes)
+    ocr_raw = extract_ocr(image_bytes)
+    ocr_text = ocr_raw.get("text", "")
 
-    # 3) GPT-forbedring
-    gpt_notes = gpt_enhance(prediction, ocr_text)
+    # 3) GPT enhancement
+    gpt_notes = gpt_enhance(
+        prediction_text=prediction_label,
+        ocr_text=ocr_text
+    )
 
-    # 4) Pak det hele sammen
-    return build_metadata(
-        prediction=prediction,
+    # 4) metadata
+    metadata = build_metadata(
+        prediction=prediction_label,
+        confidence=prediction_confidence,
         ocr_text=ocr_text,
         gpt_notes=gpt_notes,
     )
+
+    return metadata
