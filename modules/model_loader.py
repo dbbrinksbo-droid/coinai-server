@@ -1,92 +1,47 @@
-import io
-import json
-import numpy as np
-from PIL import Image
+import os
+import requests
 import onnxruntime as ort
 
-# ------------------------
-# FILPLACERING
-# ------------------------
-MODEL_PATH = "sagacoin_full_model.onnx"
-LABELS_PATH = "labels.json"
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1qtwsFR6uLA4qcSxhfRZ7vWsZ8PB_XSDB"
+LOCAL_MODEL_PATH = "/app/sagacoin_full_model.onnx"
+LABELS_PATH = "/app/labels.txt"  # just in case you have a labels file
 
-print("🔄 Loading FULL SagaCoin ONNX model...")
+def download_model(url: str, dest_path: str, chunk_size: int = 8192):
+    print(f"Downloading model from {url} …")
+    resp = requests.get(url, stream=True)
+    resp.raise_for_status()
+    with open(dest_path, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=chunk_size):
+            if chunk:
+                f.write(chunk)
+    print(f"Model downloaded and saved to {dest_path}")
 
-# ------------------------
-# LOAD MODEL
-# ------------------------
-try:
-    session = ort.InferenceSession(
-        MODEL_PATH,
-        providers=["CPUExecutionProvider"]
-    )
-    print("✅ ONNX model loaded")
-except Exception as e:
-    print("❌ ERROR loading ONNX model:", e)
-    session = None
+def get_model_path() -> str:
+    if not os.path.exists(LOCAL_MODEL_PATH):
+        download_model(MODEL_URL, LOCAL_MODEL_PATH)
+    else:
+        print(f"Model already present at {LOCAL_MODEL_PATH}")
+    return LOCAL_MODEL_PATH
 
-# ------------------------
-# LOAD LABELS
-# ------------------------
-try:
-    with open(LABELS_PATH, "r", encoding="utf-8") as f:
-        LABELS = json.load(f)
+def load_model() -> ort.InferenceSession:
+    model_path = get_model_path()
+    print(f"Loading ONNX model from {model_path} …")
+    session = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+    print("Model loaded successfully!")
+    return session
 
-    # Ensure index → label mapping
-    if isinstance(LABELS, dict):
-        LABELS = [LABELS[str(i)] for i in range(len(LABELS))]
-    print("✅ Labels loaded")
-except Exception as e:
-    print("⚠️ Could not load labels:", e)
-    LABELS = None
+def load_labels() -> list[str]:
+    if os.path.exists(LABELS_PATH):
+        with open(LABELS_PATH, "r", encoding="utf-8") as f:
+            labels = [line.strip() for line in f if line.strip()]
+        print(f"Loaded {len(labels)} labels from {LABELS_PATH}")
+        return labels
+    else:
+        print(f"No labels file found at {LABELS_PATH}, returning empty list")
+        return []
 
-# ------------------------
-# ViT PREPROCESS
-# ------------------------
-def preprocess_vit(image_bytes):
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img = img.resize((224, 224))
-
-    arr = np.array(img).astype("float32") / 255.0
-
-    # ViT normalization
-    mean = np.array([0.5, 0.5, 0.5])
-    std = np.array([0.5, 0.5, 0.5])
-    arr = (arr - mean) / std
-
-    # HWC → CHW
-    arr = np.transpose(arr, (2, 0, 1))
-
-    # add batch dimension
-    arr = np.expand_dims(arr, axis=0)
-
-    return arr
-
-
-# ------------------------
-# PREDICT
-# ------------------------
-def predict_image(image_bytes):
-    if session is None:
-        return {"error": "Model not loaded"}
-
-    try:
-        input_data = preprocess_vit(image_bytes)
-
-        input_name = session.get_inputs()[0].name
-
-        outputs = session.run(None, {input_name: input_data})
-        scores = outputs[0][0]
-
-        top_idx = int(np.argmax(scores))
-        top_label = LABELS[top_idx] if LABELS else str(top_idx)
-
-        return {
-            "scores": scores.tolist(),
-            "top_index": top_idx,
-            "top_label": top_label
-        }
-
-    except Exception as e:
-        print("❌ ONNX ERROR:", e)
-        return {"error": str(e)}
+if __name__ == "__main__":
+    session = load_model()
+    labels = load_labels()
+    # eksempel — du kan ændre efter dit behov:
+    print("Ready to run inference.")
