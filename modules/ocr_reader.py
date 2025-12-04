@@ -5,11 +5,6 @@ OCR_API_URL = "https://api.ocr.space/parse/image"
 
 
 def extract_ocr(image_bytes: bytes, language="eng"):
-    """
-    Sender billede-data til OCR.Space API og returnerer tekst.
-    image_bytes: bytes fra et billede (ex: uploaded_file.read())
-    """
-
     print("Sending image to OCR API...")
 
     try:
@@ -21,8 +16,6 @@ def extract_ocr(image_bytes: bytes, language="eng"):
         )
 
         result = response.json()
-
-        # Debug print
         print("OCR response:", result)
 
         if result.get("IsErroredOnProcessing"):
