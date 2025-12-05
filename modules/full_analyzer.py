@@ -3,34 +3,32 @@ from modules.ocr_reader import extract_ocr
 from modules.gpt_helper import gpt_enhance
 from modules.metadata_builder import build_metadata
 
-
-def full_coin_analyze(image_bytes: bytes):
+def full_coin_analyze(pil_image):
     """
-    Fuldt flow:
-    1) ONNX prediction
-    2) OCR
-    3) GPT-4o-mini forklaring
-    4) Samlet metadata
+    Fuldt AI-flow:
+    1) ONNX prediction (PIL image → model)
+    2) OCR (PIL image → text)
+    3) GPT forklaring
+    4) Samlet metadata retur
     """
 
     # 1) ONNX prediction
-    prediction_raw = predict_image(image_bytes)
+    prediction_raw = predict_image(pil_image)
 
-    # ensure prediction_raw contains needed fields
     prediction_label = prediction_raw.get("label", "")
     prediction_confidence = prediction_raw.get("confidence", 0)
 
     # 2) OCR
-    ocr_raw = extract_ocr(image_bytes)
+    ocr_raw = extract_ocr(pil_image)
     ocr_text = ocr_raw.get("text", "")
 
-    # 3) GPT enhancement
+    # 3) GPT forklaring
     gpt_notes = gpt_enhance(
         prediction_text=prediction_label,
         ocr_text=ocr_text
     )
 
-    # 4) metadata
+    # 4) Samlet metadata
     metadata = build_metadata(
         prediction=prediction_label,
         confidence=prediction_confidence,
