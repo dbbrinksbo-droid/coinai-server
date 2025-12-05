@@ -1,14 +1,24 @@
 import time
 
+def build_metadata(prediction, confidence=0.0, ocr_text=None, gpt_notes=None):
+    """
+    Samler al AI-data til ét samlet svar.
+    Bruges af full_analyze → sendes til appen.
+    """
 
-def build_metadata(prediction, ocr_text=None, gpt_notes=None):
-    """
-    Samler al info om mønten ét sted.
-    """
     return {
         "timestamp": int(time.time()),
-        "model_prediction": prediction,
-        "ocr_text": ocr_text or "",
-        "gpt_enhancement": gpt_notes or "",
+
+        # Model output
+        "label": prediction,
+        "confidence": float(confidence),
+
+        # OCR
+        "ocr": ocr_text or "",
+
+        # GPT forklaring
+        "gpt": gpt_notes or "",
+
+        # status til debugging
         "status": "ok",
     }
