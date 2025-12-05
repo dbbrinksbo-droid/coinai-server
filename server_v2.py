@@ -1,60 +1,41 @@
 import os
-import io
+from io import BytesIO
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
 
-# Korrekte imports fra dine lokale mapper
-from modules.model_loader import predict_image
-from modules.full_analyzer import full_coin_analyze
-
-# BASE PATH – bruges til at undgå FileNotFound fejl
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# V3 analyzer
+from modules.analyzer_v3 import analyze_full_coin_v3
 
 app = Flask(__name__)
 CORS(app)
 
 @app.route("/", methods=["GET"])
-def root():
-    return jsonify({
-        "status": "ok",
-        "version": "coinai-v2",
-        "message": "ONNX + GPT backend kører"
-    })
+def home():
+    return jsonify({"server": "SagaMoent Backend V3", "status": "online"})
 
-@app.route("/predict", methods=["POST"])
-def route_predict():
-    if "image" not in request.files:
-        return jsonify({"error": "Missing image file field 'image'"}), 400
-
-    img_file = request.files["image"]
-    image_bytes = img_file.read()
+# ---------------------------------------------------------------------
+# NEW V3 ENDPOINT — supports front + back + userInput
+# ---------------------------------------------------------------------
+@app.route("/full-analyze-v3", methods=["POST"])
+def full_analyze_v3():
+    if "front" not in request.files or "back" not in request.files:
+        return jsonify({"error": "Missing images: need front & back"}), 400
 
     try:
-        image = Image.open(io.BytesIO(image_bytes))
-    except Exception:
-        return jsonify({"error": "Image could not be decoded"}), 400
+        front_bytes = request.files["front"].read()
+        back_bytes = request.files["back"].read()
 
-    result = predict_image(image)
-    return jsonify(result)
+        user_input = request.form.get("userInput", "{}")
 
-@app.route("/full-analyze", methods=["POST"])
-def route_full_analyze():
-    if "image" not in request.files:
-        return jsonify({"error": "Missing image file field 'image'"}), 400
+        result = analyze_full_coin_v3(front_bytes, back_bytes, user_input)
+        return jsonify(result)
 
-    img_file = request.files["image"]
-    image_bytes = img_file.read()
+    except Exception as e:
+        print("V3 ERROR:", e)
+        return jsonify({"error": "Backend V3 failed", "details": str(e)}), 500
 
-    try:
-        image = Image.open(io.BytesIO(image_bytes))
-    except Exception:
-        return jsonify({"error": "Image could not be decoded"}), 400
-
-    result = full_coin_analyze(image)
-    return jsonify(result)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8080"))
-    print(f"[Backend] Starter på port {port}…")
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port)
