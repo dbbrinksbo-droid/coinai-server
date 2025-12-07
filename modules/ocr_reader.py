@@ -2,56 +2,35 @@ import io
 import requests
 from PIL import Image
 
-OCR_API_KEY = "helloworld"  # testnøgle
-OCR_API_URL = "https://api.ocr.space/parse/image"
+OCR_API_KEY = "helloworld"
+OCR_URL = "https://api.ocr.space/parse/image"
 
 
-def extract_ocr(pil_image: Image.Image, language="eng"):
-    """
-    Modtager PIL-image → konverterer til bytes → sender til OCR.Space.
-    Returnerer dict: { success, text, error }
-    """
+def extract_ocr(pil_image: Image.Image):
 
-    print("Sending image to OCR API...")
-
-    # PIL → bytes
-    img_bytes_io = io.BytesIO()
-    pil_image.save(img_bytes_io, format="JPEG")
-    img_bytes = img_bytes_io.getvalue()
+    img_bytes = io.BytesIO()
+    pil_image.save(img_bytes, format="JPEG")
+    img_bytes = img_bytes.getvalue()
 
     try:
-        response = requests.post(
-            OCR_API_URL,
+        res = requests.post(
+            OCR_URL,
             files={"filename": ("image.jpg", img_bytes)},
-            data={"apikey": OCR_API_KEY, "language": language},
+            data={"apikey": OCR_API_KEY, "language": "eng"},
             timeout=30
-        )
+        ).json()
 
-        result = response.json()
-        print("OCR response:", result)
+        if res.get("IsErroredOnProcessing"):
+            return {"success": False, "text": ""}
 
-        if result.get("IsErroredOnProcessing"):
-            return {
-                "success": False,
-                "text": "",
-                "error": result.get("ErrorMessage")
-            }
-
-        parsed = result.get("ParsedResults")
+        parsed = res.get("ParsedResults", [])
         if not parsed:
-            return {"success": False, "text": "", "error": "No OCR results"}
+            return {"success": False, "text": ""}
 
-        extracted_text = parsed[0].get("ParsedText", "")
+        text = parsed[0].get("ParsedText", "").strip()
 
-        return {
-            "success": True,
-            "text": extracted_text.strip()
-        }
+        return {"success": True, "text": text}
 
     except Exception as e:
-        print("OCR error:", e)
-        return {
-            "success": False,
-            "text": "",
-            "error": str(e)
-        }
+        print("OCR ERROR:", e)
+        return {"success": False, "text": ""}
