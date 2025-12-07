@@ -1,24 +1,11 @@
 import time
 
-def build_metadata(prediction, confidence=0.0, ocr_text=None, gpt_notes=None):
-    """
-    Samler al AI-data til ét samlet svar.
-    Bruges af full_analyze → sendes til appen.
-    """
-
+def build_metadata(prediction, confidence, ocr_text, gpt_notes):
     return {
         "timestamp": int(time.time()),
-
-        # Model output
         "label": prediction,
-        "confidence": float(confidence),
-
-        # OCR
-        "ocr": ocr_text or "",
-
-        # GPT forklaring
-        "gpt": gpt_notes or "",
-
-        # status til debugging
-        "status": "ok",
+        "confidence": confidence,
+        "ocr": ocr_text,
+        "gpt": gpt_notes,
+        "status": "ok"
     }
