@@ -1,8 +1,8 @@
 import os
 import json
 import numpy as np
-from PIL import Image
 import onnxruntime as ort
+from PIL import Image
 
 MODEL_PATH = "sagacoin_full_model.onnx"
 LABELS_FILE = "labels.json"
@@ -17,13 +17,14 @@ def load_labels():
         return _labels
 
     if not os.path.exists(LABELS_FILE):
-        print("⚠️ No labels.json found!")
+        print("⚠️ labels.json missing!")
         _labels = []
         return _labels
 
     with open(LABELS_FILE, "r") as f:
         data = json.load(f)
 
+    # Sort by index
     _labels = [label for label, idx in sorted(data.items(), key=lambda x: x[1])]
     return _labels
 
@@ -32,6 +33,9 @@ def load_model():
     global _session
     if _session:
         return _session
+
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
 
     _session = ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
     return _session
