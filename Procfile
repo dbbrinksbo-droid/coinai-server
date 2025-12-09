@@ -1,1 +1,1 @@
-"mode":"full-analyze-v3","server":"SagaMoent Backend V12",
+https://github.com/dbbrinksbo-droid/coinai-server/tree/main
