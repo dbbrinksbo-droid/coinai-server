@@ -1,1 +1,1 @@
-web: python server_v2.py
+"mode":"full-analyze-v3","server":"SagaMoent Backend V12",
