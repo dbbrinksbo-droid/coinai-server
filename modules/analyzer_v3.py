@@ -1,6 +1,8 @@
+# modules/analyzer_v3.py
+
+import json
 from io import BytesIO
 from PIL import Image
-import json
 
 from modules.model_loader import predict_image
 from modules.ocr_reader import extract_ocr
@@ -9,7 +11,6 @@ from modules.metadata_builder import build_metadata
 
 
 def analyze_full_coin_v3(front_bytes, back_bytes, user_input_raw):
-
     front_img = Image.open(BytesIO(front_bytes)).convert("RGB")
     back_img = Image.open(BytesIO(back_bytes)).convert("RGB")
 
