@@ -1,8 +1,10 @@
 # server_v2.py — SagaMoent Backend V12
 
 import os
+from io import BytesIO
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from PIL import Image
 
 from modules.analyzer_v3 import analyze_full_coin_v3
 
@@ -42,8 +44,4 @@ def full_analyze_v3():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    print("🔥 SagaMoent Backend V12 starting on port", port)
-    app.run(host="0.0.0.0", port=port)
-
+app = app
