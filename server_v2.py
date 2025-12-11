@@ -1,4 +1,4 @@
-# server_v2.py — SagaMoent Backend V12 (FINAL FIX)
+# server_v2.py — SagaMoent Backend V12
 
 import os
 from io import BytesIO
@@ -6,20 +6,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
 
-# >>> IMPORT YOUR AI ANALYZER <<<
 from modules.analyzer_v3 import analyze_full_coin_v3
 
-
-# -------------------------------------------------------
-# INITIALIZE FLASK APP
-# -------------------------------------------------------
 app = Flask(__name__)
 CORS(app)
 
-
-# -------------------------------------------------------
-# HOME ENDPOINT
-# -------------------------------------------------------
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
@@ -28,10 +19,6 @@ def home():
         "mode": "full-analyze-v3"
     })
 
-
-# -------------------------------------------------------
-# FULL ANALYZE ENDPOINT
-# -------------------------------------------------------
 @app.route("/full-analyze-v3", methods=["POST"])
 def full_analyze_v3():
     try:
@@ -44,7 +31,6 @@ def full_analyze_v3():
         back_bytes = request.files["back"].read()
         user_input = request.form.get("userInput", "{}")
 
-        # RUN AI ANALYSIS
         result = analyze_full_coin_v3(front_bytes, back_bytes, user_input)
 
         return jsonify({
@@ -55,12 +41,7 @@ def full_analyze_v3():
 
     except Exception as e:
         print("🔥 BACKEND ERROR:", e)
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
-# -------------------------------------------------------
-# RAILWAY / LOCAL SERVER STARTUP
-#
+app = app
