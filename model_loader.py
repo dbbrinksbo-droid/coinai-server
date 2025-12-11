@@ -1,113 +1,93 @@
 import os
 import json
+import urllib.request
 import numpy as np
-import requests
 import onnxruntime as ort
 from PIL import Image
 
-# ----------------------------------------------------------
-# SETTINGS
-# ----------------------------------------------------------
-MODEL_URL = os.getenv("MODEL_URL")   # Google Drive link via Railway variables
-MODEL_DIR = "models"
-MODEL_PATH = os.path.join(MODEL_DIR, "sagacoin_full_model.onnx")
+MODEL_PATH = "sagacoin_full_model.onnx"
 LABELS_FILE = "labels.json"
 
 _session = None
 _labels = None
 
 
-# ----------------------------------------------------------
-# ENSURE MODEL EXISTS (DOWNLOAD IF MISSING)
-# ----------------------------------------------------------
-def ensure_model_exists():
+def download_model_if_needed():
+    model_url = os.getenv("MODEL_URL")
+
+    if not model_url:
+        print("❌ MODEL_URL not set!")
+        return False
+
     if os.path.exists(MODEL_PATH):
-        print("✔ Model already exists:", MODEL_PATH)
-        return
+        print("✔ Model already exists")
+        return True
 
-    if not MODEL_URL:
-        raise RuntimeError("❌ MODEL_URL mangler i Railway variables!")
+    print(f"⬇ Downloading model from: {model_url}")
 
-    print(f"⬇ Downloader model fra: {MODEL_URL}")
-
-    os.makedirs(MODEL_DIR, exist_ok=True)
-
-    resp = requests.get(MODEL_URL, allow_redirects=True)
-    if resp.status_code != 200:
-        raise RuntimeError(f"❌ Kunne ikke downloade modellen ({resp.status_code})")
-
-    with open(MODEL_PATH, "wb") as f:
-        f.write(resp.content)
-
-    print("✔ Model downloaded og gemt:", MODEL_PATH)
+    try:
+        urllib.request.urlretrieve(model_url, MODEL_PATH)
+        print("✔ Model downloaded")
+        return True
+    except Exception as e:
+        print("❌ MODEL DOWNLOAD FAILED:", e)
+        return False
 
 
-# ----------------------------------------------------------
-# LOAD LABELS
-# ----------------------------------------------------------
-def get_labels():
+def load_labels():
     global _labels
-    if _labels is not None:
+
+    if _labels:
         return _labels
 
     if not os.path.exists(LABELS_FILE):
-        print("⚠ labels.json mangler — fallback labels bruges")
-        _labels = [f"label_{i}" for i in range(500)]
+        print("⚠ labels.json missing")
+        _labels = []
         return _labels
 
     with open(LABELS_FILE, "r") as f:
         data = json.load(f)
 
     _labels = [label for label, idx in sorted(data.items(), key=lambda x: x[1])]
-    print("✔ Labels loaded:", len(_labels))
+    print(f"✔ Loaded {len(_labels)} labels")
     return _labels
 
 
-# ----------------------------------------------------------
-# GET ONNX SESSION
-# ----------------------------------------------------------
-def get_session():
+def load_model():
     global _session
 
-    if _session is not None:
+    if _session:
         return _session
 
-    ensure_model_exists()
+    download_model_if_needed()
 
-    print("🔄 Loader ONNX model:", MODEL_PATH)
+    print("🔄 Loading ONNX model...")
     _session = ort.InferenceSession(MODEL_PATH, providers=["CPUExecutionProvider"])
-    print("✔ ONNX model loaded.")
+    print("✔ ONNX ready")
 
     return _session
 
 
-# ----------------------------------------------------------
-# PREPROCESS IMAGE
-# ----------------------------------------------------------
-def preprocess(img: Image.Image):
+def preprocess(img):
     img = img.resize((224, 224)).convert("RGB")
-    arr = np.asarray(img).astype("float32") / 255.0
-    arr = np.transpose(arr, (2, 0, 1))   # HWC → CHW
-    arr = np.expand_dims(arr, axis=0)    # Add batch dimension
+    arr = np.array(img).astype("float32") / 255
+    arr = arr.transpose(2, 0, 1)
+    arr = arr[np.newaxis, :]
     return arr
 
 
-# ----------------------------------------------------------
-# PREDICT
-# ----------------------------------------------------------
-def predict_image(img: Image.Image):
-    session = get_session()
-    labels = get_labels()
+def predict_image(img):
+    session = load_model()
+    labels = load_labels()
 
     arr = preprocess(img)
     input_name = session.get_inputs()[0].name
 
-    output = session.run(None, {input_name: arr})
-    vector = output[0][0]
+    out = session.run(None, {input_name: arr})
+    vector = out[0][0]
 
     idx = int(np.argmax(vector))
     conf = float(vector[idx])
-
     label = labels[idx] if idx < len(labels) else f"label_{idx}"
 
     return {
