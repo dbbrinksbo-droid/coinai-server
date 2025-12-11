@@ -1,4 +1,5 @@
-rebuild marker 20251211
+# server_v2.py — SagaMoent Backend V12
+
 import os
 from io import BytesIO
 from flask import Flask, request, jsonify
@@ -23,7 +24,6 @@ def full_analyze_v3():
     try:
         if "front" not in request.files:
             return jsonify({"error": "Missing front image"}), 400
-
         if "back" not in request.files:
             return jsonify({"error": "Missing back image"}), 400
 
@@ -44,5 +44,4 @@ def full_analyze_v3():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# Railway needs the app object exposed
 app = app
