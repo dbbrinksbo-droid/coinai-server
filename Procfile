@@ -1,1 +1,1 @@
-web: python3 server_v2.py
+web: gunicorn server_v2:app --timeout 0 --preload
