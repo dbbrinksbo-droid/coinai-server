@@ -9,4 +9,3 @@ def build_metadata(prediction, confidence, ocr_text, gpt_notes):
         "gpt": gpt_notes,
         "status": "ok"
     }
-
