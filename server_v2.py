@@ -43,6 +43,7 @@ def full_analyze_v3():
 
 
 if __name__ == "__main__":
-    print("🔥 SagaMoent Backend V12 starting...")
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.environ.get("PORT", 8080))
+    print("🔥 SagaMoent Backend V12 starting on port", port)
     app.run(host="0.0.0.0", port=port)
+
