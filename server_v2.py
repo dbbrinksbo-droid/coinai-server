@@ -4,8 +4,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from services.analyzer import analyze_full_coin_v3
-
+from modules.analyzer_v3 import analyze_full_coin_v3
 app = Flask(__name__)
 CORS(app)
 
