@@ -1,4 +1,4 @@
-# modules/model_loader.py — LOCAL ONLY (NO DOWNLOAD)
+# model_loader.py — LOCAL ONLY (SagaMoent FINAL)
 
 import os
 import json
@@ -15,6 +15,7 @@ _labels = None
 
 def load_labels():
     global _labels
+
     if _labels is not None:
         return _labels
 
@@ -26,6 +27,7 @@ def load_labels():
 
     _labels = [label for label, idx in sorted(data.items(), key=lambda x: x[1])]
     print(f"✔ Loaded {len(_labels)} labels")
+
     return _labels
 
 
@@ -47,14 +49,15 @@ def load_model():
     )
 
     print("✔ ONNX model ready")
+
     return _session
 
 
 def preprocess(img: Image.Image):
     img = img.resize((224, 224)).convert("RGB")
     arr = np.array(img).astype("float32") / 255.0
-    arr = arr.transpose(2, 0, 1)
-    arr = arr[np.newaxis, :]
+    arr = arr.transpose(2, 0, 1)   # CHW
+    arr = arr[np.newaxis, :]       # NCHW
     return arr
 
 
@@ -65,8 +68,8 @@ def predict_image(img: Image.Image):
     arr = preprocess(img)
     input_name = session.get_inputs()[0].name
 
-    out = session.run(None, {input_name: arr})
-    vector = out[0][0]
+    outputs = session.run(None, {input_name: arr})
+    vector = outputs[0][0]
 
     idx = int(np.argmax(vector))
     conf = float(vector[idx])
