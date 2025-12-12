@@ -1,55 +1,33 @@
-# modules/analyzer_v3.py — SagaMoent Full Analyze V12 (Production safe)
+# modules/analyzer_v3.py
+# SagaMoent Full Analyze V12 — VISION ONLY (NO OCR, NO GPT NOTES)
 
-import json
 from io import BytesIO
 from PIL import Image
 
 from modules.model_loader import predict_image
-from modules.ocr_reader import extract_ocr
-from modules.gpt_helper import gpt_enhance
-from modules.metadata_builder import build_metadata
+from modules.vision_gpt_reader import read_coin_from_image
 
 
-def analyze_full_coin_v3(front_bytes, back_bytes, user_input_raw):
-    # Load images
+def analyze_full_coin_v3(front_bytes, back_bytes=None, user_input_raw=None):
+    # --- Vision GPT FIRST (HARD RULE) ---
+    visual = read_coin_from_image(front_bytes)
+
+    # --- AI prediction (classification only) ---
     front_img = Image.open(BytesIO(front_bytes)).convert("RGB")
-    back_img = Image.open(BytesIO(back_bytes)).convert("RGB")
-
-    # AI prediction
     pred_front = predict_image(front_img)
-    pred_back = predict_image(back_img)
 
-    # OCR
-    ocr_front = extract_ocr(front_img).get("text", "")
-    ocr_back = extract_ocr(back_img).get("text", "")
-
-    # User input (optional metadata from app)
-    try:
-        user_data = json.loads(user_input_raw) if user_input_raw else {}
-    except Exception:
-        user_data = {}
-
-    # GPT enhancement
-    gpt_notes = gpt_enhance(
-        prediction_text=pred_front.get("label", ""),
-        ocr_text=f"front:{ocr_front} | back:{ocr_back}"
-    )
-
-    # Metadata aggregation
-    metadata = build_metadata(
-        prediction=pred_front.get("label", ""),
-        confidence=float(pred_front.get("confidence", 0)),
-        ocr_text=(ocr_front or ocr_back),
-        gpt_notes=gpt_notes
-    )
-
-    # Final result
-    return {
+    result = {
+        "visual": {
+            "front_text": visual.get("front_text", "NOT VISIBLE"),
+            "back_text": visual.get("back_text", "NOT VISIBLE"),
+            "symbols": visual.get("symbols", []),
+        },
         "front_prediction": pred_front,
-        "back_prediction": pred_back,
-        "ocr_front": ocr_front,
-        "ocr_back": ocr_back,
-        "gpt_notes": gpt_notes,
-        "user": user_data,
-        "meta": metadata
     }
+
+    # Optional back image classification (no OCR)
+    if back_bytes:
+        back_img = Image.open(BytesIO(back_bytes)).convert("RGB")
+        result["back_prediction"] = predict_image(back_img)
+
+    return result
