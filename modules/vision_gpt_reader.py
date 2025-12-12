@@ -1,59 +1,45 @@
 # modules/vision_gpt_reader.py
-# SagaMoent Vision GPT Reader — IMAGE → TEXT (STRICT)
+# SagaMoent – Vision GPT Reader (REAL VISION)
 
+import os
 import base64
 from openai import OpenAI
 
-client = OpenAI()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+SYSTEM_PROMPT = """
+You are a strict visual coin transcription engine.
 
-def read_coin_from_image(image_bytes: bytes):
-    """
-    Uses GPT-4 Vision to read all visible text, symbols and details
-    directly from the coin image.
-    """
+Rules:
+- Use ONLY what is visible in the image.
+- Transcribe visible text EXACTLY.
+- If something is not visible, write: NOT VISIBLE
+- No guessing. No explanations.
+- Output JSON only.
+"""
 
-    encoded = base64.b64encode(image_bytes).decode("utf-8")
+def read_coin_from_image(image_bytes: bytes) -> dict:
+    b64 = base64.b64encode(image_bytes).decode("utf-8")
 
-    response = client.chat.completions.create(
+    response = client.responses.create(
         model="gpt-4.1-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a professional numismatist. "
-                    "Read ONLY what is visually present on the coin image. "
-                    "Do NOT guess. Do NOT hallucinate. "
-                    "If something is not visible, say NOT VISIBLE."
-                ),
-            },
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": (
-                            "Read the coin carefully. "
-                            "Extract front text, back text, symbols, numbers, "
-                            "dates, mint marks and any visible details."
-                        ),
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{encoded}"
-                        },
-                    },
-                ],
-            },
-        ],
-        temperature=0.0,
+        input=[{
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": SYSTEM_PROMPT},
+                {"type": "input_image", "image_base64": b64}
+            ]
+        }]
     )
 
-    text = response.choices[0].message.content.strip()
+    text = response.output_text
 
-    return {
-        "front_text": text,
-        "back_text": text,
-        "symbols": [],
-    }
+    try:
+        return eval(text)
+    except Exception:
+        return {
+            "front_text": "NOT VISIBLE",
+            "back_text": "NOT VISIBLE",
+            "symbols": []
+        }
+
