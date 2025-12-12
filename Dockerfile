@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-CMD ["gunicorn", "-b", "0.0.0.0:$PORT", "server_v2:app"]
+CMD ["python", "server_v2.py"]
