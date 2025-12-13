@@ -1,20 +1,19 @@
 #!/bin/sh
 set -e
 
-echo "🚀 SagaMoent start.sh running"
+echo "🚨🚨🚨 THIS IS THE NEW start.sh 🚨🚨🚨"
+echo "PWD=$(pwd)"
+echo "LS / ="
+ls -la /
 
-MODEL_DIR="/app/models"
-MODEL_DST="/app/models/sagacoin_full_model.onnx"
-
-# Opret mappe (sikker placering)
-mkdir -p "$MODEL_DIR"
+MODEL_DST="/tmp/sagacoin_full_model.onnx"
 
 if [ ! -f "$MODEL_DST" ]; then
-  echo "⬇️ Downloading ONNX model..."
+  echo "⬇️ Downloading ONNX model to /tmp..."
   gdown "$MODEL_URL" -O "$MODEL_DST"
-  echo "✅ Model downloaded"
+  echo "✅ Model downloaded to /tmp"
 else
-  echo "✅ Model already exists"
+  echo "✅ Model already exists in /tmp"
 fi
 
 exec python server_v2.py
