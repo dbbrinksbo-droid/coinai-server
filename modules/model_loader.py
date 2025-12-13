@@ -1,4 +1,7 @@
 # model_loader.py — LOCAL ONLY (SagaMoent FINAL)
+print("🧠 MODEL LOADER INITIALIZING")
+print("📂 MODEL_PATH =", MODEL_PATH)
+print("📂 EXISTS =", os.path.exists(MODEL_PATH))
 
 import os
 import json
