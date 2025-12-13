@@ -1,3 +1,11 @@
+import os
+
+print("📂 / CONTENTS:", os.listdir("/"))
+
+for p in ["/app", "/models", "/data"]:
+    if os.path.exists(p):
+        print(f"📂 {p} CONTENTS:", os.listdir(p))
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
