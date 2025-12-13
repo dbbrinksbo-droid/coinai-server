@@ -5,6 +5,7 @@ import onnxruntime as ort
 from PIL import Image
 
 print("🚨🚨🚨 USING MODEL_LOADER FROM:", __file__)
+
 MODEL_PATH = "/tmp/sagacoin_full_model.onnx"
 LABELS_FILE = "labels.json"
 
@@ -69,3 +70,4 @@ def predict_image(img: Image.Image):
         "confidence": conf,
         "index": idx
     }
+
