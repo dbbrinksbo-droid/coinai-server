@@ -1,6 +1,6 @@
 import base64
 import os
-
+import json
 from openai import OpenAI
 
 
@@ -9,76 +9,56 @@ def _b64_image(image_bytes: bytes) -> str:
 
 
 def read_coin_from_image(image_bytes, side="front", user=None, prediction=None):
-    """
-    Vision GPT reader:
-    - Reads visible text/symbols ONLY from the coin image.
-    - Uses user hints (country/year/grade/etc) as guidance, not as truth.
-    - Returns structured fields + a clean readable text.
-    """
     if not image_bytes:
-        return {"side": side, "text": "", "fields": {}, "confidence": 0, "notes": "No image bytes"}
-
-    user = user or {}
-    prediction = prediction or {}
-
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if not api_key:
-        # Don't crash production if env is missing
         return {
             "side": side,
-            "text": "",
-            "fields": {},
             "confidence": 0,
-            "notes": "OPENAI_API_KEY missing on server"
+            "fields": {},
+            "text": ""
+        }
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return {
+            "side": side,
+            "confidence": 0,
+            "fields": {},
+            "text": ""
         }
 
     client = OpenAI()
 
     img_b64 = _b64_image(image_bytes)
 
-    # Hard rules: NEVER say "no visible text" unless truly unreadable.
     system = (
-        "You are a numismatics vision assistant. "
-        "You MUST base your reading primarily on the provided coin photo. "
-        "Extract inscriptions, denomination, year, country, ruler/coat-of-arms, mintmarks, and notable features. "
-        "If something is unclear, say 'UNCLEAR' for that field, but do NOT claim 'no visible text' unless the photo truly shows none."
+        "You are a numismatic vision expert.\n"
+        "You MUST ONLY describe what is VISIBLE on the coin image.\n"
+        "You MUST NOT invent, guess, or generalize.\n"
+        "If something cannot be clearly seen, write 'UNCLEAR'.\n"
+        "DO NOT write explanations, advice, or disclaimers.\n"
+        "Return STRICT JSON ONLY."
     )
 
-    # User hints are guidance only (helps focus)
-    hint = {
-        "country_hint": user.get("country"),
-        "year_hint": user.get("year"),
-        "denomination_hint": user.get("denomination"),
-        "grade_hint": user.get("grade"),
-        "notes_hint": user.get("notes"),
-        "model_label_hint": prediction.get("label"),
-        "model_confidence_hint": prediction.get("confidence"),
-    }
-
     prompt = (
-        f"Analyze the {side} side of this coin photo.\n"
-        f"Use these hints ONLY as guidance (not truth): {hint}\n\n"
-        "Return JSON with this exact shape:\n"
+        "Analyze this coin image.\n"
+        "Return STRICT JSON in this exact format:\n\n"
         "{\n"
         '  "side": "front|back",\n'
         '  "confidence": 0-100,\n'
         '  "fields": {\n'
-        '    "country": "...|UNCLEAR",\n'
-        '    "denomination": "...|UNCLEAR",\n'
-        '    "year": "...|UNCLEAR",\n'
-        '    "ruler_or_motif": "...|UNCLEAR",\n'
-        '    "inscriptions": ["..."],\n'
-        '    "mintmark": "...|UNCLEAR",\n'
-        '    "language": "...|UNCLEAR",\n'
-        '    "notable_features": ["..."],\n'
-        '    "possible_errors": ["..."]\n'
+        '    "country": "TEXT|UNCLEAR",\n'
+        '    "denomination": "TEXT|UNCLEAR",\n'
+        '    "year": "TEXT|UNCLEAR",\n'
+        '    "ruler_or_motif": "TEXT|UNCLEAR",\n'
+        '    "inscriptions": ["TEXT"],\n'
+        '    "mintmark": "TEXT|UNCLEAR",\n'
+        '    "symbols": ["TEXT"],\n'
+        '    "notable_features": ["TEXT"]\n'
         "  },\n"
-        '  "text": "A short human-readable summary of what you can READ/SEE on this side."\n'
+        '  "text": "ONE short factual sentence describing ONLY what is visible."\n'
         "}\n"
     )
 
-    # Use Responses API style (works with current OpenAI python SDK)
-    # Model choice: keep it small/fast but vision-capable.
     model = os.getenv("SAGAMOENT_VISION_MODEL", "gpt-4o-mini")
 
     resp = client.responses.create(
@@ -89,42 +69,29 @@ def read_coin_from_image(image_bytes, side="front", user=None, prediction=None):
                 "role": "user",
                 "content": [
                     {"type": "input_text", "text": prompt},
-                    {"type": "input_image", "image_url": f"data:image/jpeg;base64,{img_b64}"},
-                ],
-            },
+                    {"type": "input_image", "image_url": f"data:image/jpeg;base64,{img_b64}"}
+                ]
+            }
         ],
-        temperature=0.2,
+        temperature=0.0,
     )
 
-    # Extract text output
-    out_text = ""
+    raw = ""
     for item in resp.output:
         if item.type == "message":
             for c in item.content:
                 if c.type in ("output_text", "text"):
-                    out_text += c.text
+                    raw += c.text
 
-    # Best-effort JSON parse
-    import json
     try:
-        data = json.loads(out_text.strip())
+        data = json.loads(raw)
     except Exception:
-        # If model returns non-JSON, wrap it safely
-        data = {
+        return {
             "side": side,
-            "confidence": 30,
-            "fields": {"inscriptions": [], "notable_features": [], "possible_errors": []},
-            "text": out_text.strip()[:2000]
+            "confidence": 10,
+            "fields": {},
+            "text": ""
         }
 
-    # Normalize
     data["side"] = side
-    data["notes"] = data.get("notes", "")
-    if "confidence" not in data:
-        data["confidence"] = 30
-    if "fields" not in data or not isinstance(data["fields"], dict):
-        data["fields"] = {"inscriptions": [], "notable_features": [], "possible_errors": []}
-    if "text" not in data:
-        data["text"] = ""
-
     return data
