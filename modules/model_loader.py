@@ -6,7 +6,7 @@ import numpy as np
 import onnxruntime as ort
 from PIL import Image
 
-MODEL_PATH = "sagacoin_full_model.onnx"
+MODEL_PATH = "/app/models/sagacoin_full_model.onnx"
 LABELS_FILE = "labels.json"
 
 _session = None
