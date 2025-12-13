@@ -3,10 +3,10 @@ set -e
 
 echo "🚀 SagaMoent start.sh running"
 
-MODEL_DIR="/models"
-MODEL_DST="/models/sagacoin_full_model.onnx"
+MODEL_DIR="/app/models"
+MODEL_DST="/app/models/sagacoin_full_model.onnx"
 
-# 🔑 Opret models-mappen hvis den ikke findes
+# Opret mappe (sikker placering)
 mkdir -p "$MODEL_DIR"
 
 if [ ! -f "$MODEL_DST" ]; then
