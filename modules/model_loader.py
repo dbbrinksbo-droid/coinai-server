@@ -1,7 +1,4 @@
 # model_loader.py — LOCAL ONLY (SagaMoent FINAL)
-print("🧠 MODEL LOADER INITIALIZING")
-print("📂 MODEL_PATH =", MODEL_PATH)
-print("📂 EXISTS =", os.path.exists(MODEL_PATH))
 
 import os
 import json
@@ -12,9 +9,12 @@ from PIL import Image
 MODEL_PATH = "/app/models/sagacoin_full_model.onnx"
 LABELS_FILE = "labels.json"
 
+print("🧠 MODEL LOADER INITIALIZING")
+print("📂 MODEL_PATH =", MODEL_PATH)
+print("📂 EXISTS =", os.path.exists(MODEL_PATH))
+
 _session = None
 _labels = None
-
 
 def load_labels():
     global _labels
