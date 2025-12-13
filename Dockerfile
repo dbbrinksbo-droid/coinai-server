@@ -14,3 +14,4 @@ RUN chmod +x /app/start.sh
 ENV PYTHONUNBUFFERED=1
 
 CMD ["/app/start.sh"]
+
