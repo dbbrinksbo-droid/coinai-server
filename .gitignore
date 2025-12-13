@@ -36,3 +36,4 @@ __pycache__/
 # =========================
 venv/
 .env
+sagacoin_full_model.onnx
