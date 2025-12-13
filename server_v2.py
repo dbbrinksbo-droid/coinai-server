@@ -1,11 +1,4 @@
-import bootstrap_model
-
-print("📂 / CONTENTS:", os.listdir("/"))
-
-for p in ["/app", "/models", "/data"]:
-    if os.path.exists(p):
-        print(f"📂 {p} CONTENTS:", os.listdir(p))
-
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -19,7 +12,11 @@ CORS(app)
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"ok": True, "engine": "SagaMoent V13"})
+    return jsonify({
+        "ok": True,
+        "engine": "SagaMoent Backend V13",
+        "model_exists": os.path.exists("/models/sagacoin_full_model.onnx")
+    })
 
 
 @app.route("/full-analyze-v3", methods=["POST"])
@@ -27,7 +24,7 @@ def full_analyze_v3():
     try:
         front_file = request.files.get("front")
         back_file = request.files.get("back")
-        user_input_raw = request.form.get("user_input", "")  # JSON string (optional)
+        user_input_raw = request.form.get("user_input", "")
 
         if not front_file:
             return jsonify({"success": False, "error": "Missing front image"}), 400
@@ -43,7 +40,7 @@ def full_analyze_v3():
 
         return jsonify({
             "success": True,
-            "engine": "SagaMoent V13",
+            "engine": "SagaMoent Backend V13",
             "result": result
         })
 
@@ -53,8 +50,6 @@ def full_analyze_v3():
 
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 8080))
     print(f"🚀 Starting SagaMoent Backend on port {port}")
     app.run(host="0.0.0.0", port=port)
-
